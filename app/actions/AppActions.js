@@ -1,4 +1,4 @@
-import alt from '../alt';
+import alt from '../alt'
 
 class AppActions {
   constructor() {
@@ -7,8 +7,8 @@ class AppActions {
       'destroy',
       'toggleComplete',
       'fetch'
-    );
+    )
   }
 }
 
-module.exports = alt.createActions(AppActions);
+module.exports = alt.createActions(AppActions)

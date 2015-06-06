@@ -1,8 +1,8 @@
-import React from 'react';
+import React from 'react'
 
 export default class NotFoundSection extends React.Component {
   constructor() {
-    super();
+    super()
   }
 
   render() {
@@ -10,8 +10,8 @@ export default class NotFoundSection extends React.Component {
       <div>
         <h1>PAGE NOT FOUND</h1>
       </div>
-    );
+    )
   }
 }
 
-NotFoundSection.prototype.displayName = 'NotFoundSection';
+NotFoundSection.prototype.displayName = 'NotFoundSection'

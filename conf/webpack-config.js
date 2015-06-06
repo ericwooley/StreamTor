@@ -92,7 +92,7 @@ module.exports = function(options) {
     plugins.push(new webpack.optimize.DedupePlugin());
     plugins.push(new webpack.optimize.OccurenceOrderPlugin(true));
     if (prod) {
-      plugins.push(new webpack.optimize.UglifyJsPlugin({warnings: false, minimize: true, sourceMap: false}));
+      plugins.push(new webpack.optimize.UglifyJsPlugin({warnings: false, minimize: true, sourceMap: true}));
       plugins.push(new webpack.optimize.AggressiveMergingPlugin());
     }
     plugins.push(
