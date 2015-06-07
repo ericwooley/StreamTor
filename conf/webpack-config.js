@@ -1,7 +1,7 @@
 // MAIN DEPENDENCIES
 import path from 'path';
 import webpack from 'webpack';
-
+// require("font-awesome-webpack");
 import _ from 'lodash';
 
 // base app dir
@@ -49,12 +49,12 @@ module.exports = function(options) {
   config.devtool = !prod ? "#inline-source-map" : false;
 
   // STYLE LOADERS
-  let cssLoaders = 'style-loader!css-loader',
-      sassLoaders = 'style!css!sass?indentedSyntax',
-      scssLoaders = 'style!css!sass';
+  let cssLoaders = extractForProduction('style-loader!css-loader'),
+      sassLoaders = extractForProduction('style!css!sass?indentedSyntax'),
+      scssLoaders = extractForProduction('style!css!sass');
 
   // INIT PLUGINS
-  let plugins = [new webpack.NoErrorsPlugin()];
+  let plugins = [new webpack.NoErrorsPlugin(), new ExtractTextPlugin('bundle.css')];
 
   // directory cleaner
   let cleanDirectories = ['build', 'dist'];
@@ -70,7 +70,7 @@ module.exports = function(options) {
   // PRODUCTION CASE
   if (prod) {
     // WRAP INTO CSS FILE
-    cssLoaders = extractForProduction(cssLoaders);
+    cssLoaders = cssLoaders;
     sassLoaders = extractForProduction(sassLoaders);
     scssLoaders = extractForProduction(scssLoaders);
 
@@ -124,7 +124,7 @@ module.exports = function(options) {
       module: {
         loaders: [
           { test: /\.js?$/, loaders: ['react-hot', 'babel?stage=0'], exclude: [/node_modules/, /__tests__/] },
-          { test: /\.(jpe?g|png|gif|svg|woff|eot|ttf)$/, loader: 'url?limit=10000&name=[sha512:hash:base64:7].[ext]' },
+          { test: /\.(otf|eot|png|svg|ttf|woff|woff2)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url?limit=8192'},
           { test: /\.sass$/, loader: sassLoaders },
           { test: /\.css$/, loader: cssLoaders },
           { test: /\.scss$/, loader: scssLoaders }
@@ -170,9 +170,9 @@ module.exports = function(options) {
       module : {
         loaders: [
           { test: /\.(jsx?|js)$/, loaders: ['react-hot', 'babel?stage=0'], exclude: [/node_modules/, /__tests__/] },
-          { test: /\.(jpe?g|png|gif|svg|woff|eot|ttf)$/, loader: 'url?limit=10000&name=[sha512:hash:base64:7].[ext]' },
+          { test: /\.(otf|eot|png|svg|ttf|woff|woff2)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url?limit=8192'},
           { test: /\.sass$/, loader: sassLoaders },
-          { test: /\.css$/, loader: cssLoaders },
+          { test: /\.css$/, loaders: ['style-loader', 'css-loader'] },
           { test: /\.scss$/, loader: scssLoaders }
         ]
       },

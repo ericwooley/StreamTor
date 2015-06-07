@@ -1,0 +1,5 @@
+
+incompleteDownloads/*
+completeDownloads/*
+settings.sh
+.vagrant

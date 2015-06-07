@@ -1,6 +1,6 @@
 import React from 'react'
 import Router from 'react-router'
-
+// import 'font-awesome-webpack'
 let routes = require('./routes')
 
 if(typeof document !== 'undefined' && window) {

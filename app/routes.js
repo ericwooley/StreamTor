@@ -10,7 +10,7 @@ import NotFoundSection from './components/NotFoundSection/NotFoundSection'
 
 export default (
   <Route name='app' path='/' handler={Application}>
-    <Route name='watch' path='/watch/:broadcastid?' handler={watch}/>
+    <Route name='view' path='/view/:broadcastid?' handler={watch}/>
     <Route name='broadcast' path="/broadcast" handler={Broadcast}/>
     <DefaultRoute handler={watch} />
     <NotFoundRoute handler={NotFoundSection} />
