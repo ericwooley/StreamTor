@@ -1,3 +1,4 @@
+/* global MediaSource */
 import React from 'react'
 import connectToStores from 'alt/utils/connectToStores'
 import ReactInStyle from 'react-in-style'
@@ -8,7 +9,9 @@ import SpeedStats from '../SpeedStats/SpeedStats'
 class Broadcast extends React.Component {
   constructor() {
     super()
-    this.state = {}
+    this.state = {
+      torrents: []
+    }
   }
   static getPropsFromStores() {
     return {}
@@ -20,15 +23,44 @@ class Broadcast extends React.Component {
 
   }
   seedFile = (files) => {
-    client.seed(files, (torrent) => {
-      this.setState({
-        seedHash: torrent.infoHash,
-        torrent
-      })
+    if(!Array.isArray(files)) {
+      files = [files]
+    }
+    let ms = new MediaSource()
+
+    let video = React.findDOMNode(this.refs.video)
+    video.src = window.URL.createObjectURL(ms)
+
+
+    files.map((file, i)=>{
+
+      ms.addEventListener('sourceopen', function(e) {
+        file.getBuffer((buffer)=>{
+          console.log('appending', file.name)
+          var sourceBuffer = ms.addSourceBuffer('video/mp4;')
+          sourceBuffer.appendBuffer(buffer)
+        })
+
+      }, false)
+
+      // Web torrent throws some memeory error if you add a bunch at once
+      setTimeout(() => {
+        client.seed(file, (torrent) => {
+          this.state.torrents.push(torrent)
+          this.setState({
+            torrents: this.state.torrents
+          })
+        })
+      }, 100 * i)
     })
   }
   render() {
-    const {seedHash, torrent} = this.state
+    const {seedHash, torrents} = this.state
+    const torrentsAsArray = torrents.reduce((last, next) => {
+      last.push(next.infoHash)
+      return last
+    }, [])
+    console.log(torrentsAsArray)
     return (
       <div className="broadcast">
         {seedHash ? <h1>Seeding </h1> : null}
@@ -37,8 +69,10 @@ class Broadcast extends React.Component {
             <h3 className="drop-title">Drop file here</h3>
           </FileDrop>
         </div>
-        <a href={`/view/${seedHash}`} target="_blank" >{seedHash}</a> <br />
-        <SpeedStats torrent={torrent} />
+        <a href={'/view/' + encodeURI(JSON.stringify(torrentsAsArray))} target="_blank" >Open Stream</a>
+        <br />
+        {torrents.map((torrent) => <SpeedStats key={torrent.infoHash} torrent={torrent} />)}
+        <video ref="video" controls />
      </div>
     )
   }

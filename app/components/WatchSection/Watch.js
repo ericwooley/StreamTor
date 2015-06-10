@@ -81,7 +81,7 @@ class Watch extends React.Component {
   addStream = () => {
     console.log('adding stream')
   }
-  file(file) {
+  playVideo(file) {
     const video = React.findDOMNode(this.refs.video)
     videostream(file, video)
     video.addEventListener('error', once(() => {
