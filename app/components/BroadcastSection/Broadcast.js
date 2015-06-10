@@ -4,12 +4,8 @@ import ReactInStyle from 'react-in-style'
 import FileDrop from '../FileDrop/FileDrop'
 import client from '../../singletons/WebTorrent'
 import SpeedStats from '../SpeedStats/SpeedStats'
-import Recorder from '../../utils/getUserMedia'
 
 class Broadcast extends React.Component {
-  componentWillMount(){
-    this.recorder = new Recorder()
-  }
   constructor() {
     super()
     this.state = {}
@@ -31,55 +27,23 @@ class Broadcast extends React.Component {
       })
     })
   }
-  toggleRecording = () => {
-    const {recording} = this.state
-    this.setState({
-      recording: !recording
-    })
-    const videoEl = React.findDOMNode(this.refs.video)
-    const videoEl2 = React.findDOMNode(this.refs.video2)
-    if(recording) {
-      this.recorder.stopRecording((video) => {
-        console.log('got playable video', video)
-        videoEl2.src = video
-        videoEl2.play()
-      })
-
-    } else {
-      this.recorder.startRecording({
-        onSuccess: (stream)=>console.log('broadcast stream start', stream),
-        onFail: ()=>console.log('broadcast stream start'),
-        // timeout: 1000,
-        // doneRecording: () => console.log('done recording'),
-        videoEl
-      })
-    }
-
-  }
   render() {
     const {seedHash, torrent} = this.state
     return (
       <div className="broadcast">
         {seedHash ? <h1>Seeding </h1> : null}
-        <button onClick={this.toggleRecording}>{this.state.recording ? 'Stop' : 'Start'} Recording</button>
         <div className="dropzone">
           <FileDrop className="file-drop" onDrop={this.seedFile} >
             <h3 className="drop-title">Drop file here</h3>
           </FileDrop>
         </div>
-        <a href={`/watch/${seedHash}`} target="_blank" >{seedHash}</a> <br />
+        <a href={`/view/${seedHash}`} target="_blank" >{seedHash}</a> <br />
         <SpeedStats torrent={torrent} />
-        <video controls="true" ref="video" />
-        <video controls="true" ref="video2" />
      </div>
     )
   }
 }
 const style = {
-  'video': {
-    height: '300px',
-    backgroundColor: 'black'
-  },
   '.dropzone': {
     margin: '20px auto',
     width: '100%',
