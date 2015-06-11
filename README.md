@@ -1,5 +1,7 @@
 # Running
 
+[![Join the chat at https://gitter.im/ericwooley/StreamTor](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ericwooley/StreamTor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ~~~bash
 npm install && npm run dev && open http://localhost:9000
 ~~~
