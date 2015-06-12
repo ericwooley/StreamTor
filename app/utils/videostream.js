@@ -133,6 +133,7 @@ module.exports = function (file, mediaElem, opts) {
 			}
 
 			var arrayBuffer = data.toArrayBuffer(); // TODO: avoid copy
+			// sample output here http://pastebin.com/dyC9ME3P
 			console.group('Array Buffer Append')
 			console.log('Appending array buffer', arrayBuffer, 'byteLength', arrayBuffer.byteLength)
 			arrayBuffer.fileStart = requestOffset;
