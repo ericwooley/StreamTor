@@ -1,11 +1,15 @@
-/* global MediaSource */
 import React from 'react'
 import connectToStores from 'alt/utils/connectToStores'
 import ReactInStyle from 'react-in-style'
 import FileDrop from '../FileDrop/FileDrop'
 import client from '../../singletons/WebTorrent'
+import once from 'once'
 import SpeedStats from '../SpeedStats/SpeedStats'
-
+import VideoQueue from '../../VideoQueue'
+import videoStream from '../../utils/videoStream'
+import {MP4Box} from 'mp4box'
+const mp4box = new MP4Box()
+mp4box.onReady = (media) => console.log('media ready', media)
 class Broadcast extends React.Component {
   constructor() {
     super()
@@ -26,26 +30,17 @@ class Broadcast extends React.Component {
     if(!Array.isArray(files)) {
       files = [files]
     }
-    let ms = new MediaSource()
-
-    let video = React.findDOMNode(this.refs.video)
-    video.src = window.URL.createObjectURL(ms)
-
-
+    // let video = React.findDOMNode(this.refs.video)
+    // Seed the files
     files.map((file, i)=>{
-
-      ms.addEventListener('sourceopen', function(e) {
-        file.getBuffer((buffer)=>{
-          console.log('appending', file.name)
-          var sourceBuffer = ms.addSourceBuffer('video/mp4;')
-          sourceBuffer.appendBuffer(buffer)
-        })
-
-      }, false)
-
       // Web torrent throws some memeory error if you add a bunch at once
       setTimeout(() => {
         client.seed(file, (torrent) => {
+          if(!this.activeTorrent) {
+            this.activeTorrent = torrent
+            this.playfile(torrent.files[0])
+          }
+
           this.state.torrents.push(torrent)
           this.setState({
             torrents: this.state.torrents
@@ -53,6 +48,22 @@ class Broadcast extends React.Component {
         })
       }, 100 * i)
     })
+    // play the first file
+
+  }
+  playfile(file) {
+    let video = React.findDOMNode(this.refs.video)
+    /*
+    videoStream(file, video)
+    /*/
+    this.videoQueue = new VideoQueue(file, video)
+    //*/
+    video.addEventListener('error', once(() => {
+      console.log('got error', ...arguments)
+      file.createReadStream().pipe(video)
+    }))
+    video.play()
+    // debugger;
   }
   render() {
     const {seedHash, torrents} = this.state

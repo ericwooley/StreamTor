@@ -1,5 +1,5 @@
 /*eslint-disable */
-import MP4Box from 'mp4box'
+import {MP4Box} from 'mp4box'
 
 var HIGH_WATER_MARK = 10000000; // 1MB
 var LOW_WATER_MARK = 1000000; // 100kB
