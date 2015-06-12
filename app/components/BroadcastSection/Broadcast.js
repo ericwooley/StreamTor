@@ -14,7 +14,8 @@ class Broadcast extends React.Component {
   constructor() {
     super()
     this.state = {
-      torrents: []
+      torrents: [],
+      useClassVersion: false
     }
   }
   static getPropsFromStores() {
@@ -53,11 +54,15 @@ class Broadcast extends React.Component {
   }
   playfile(file) {
     let video = React.findDOMNode(this.refs.video)
-    /*
-    videoStream(file, video)
-    /*/
-    this.videoQueue = new VideoQueue(file, video)
-    //*/
+
+    // Comment swich add a / to the begging of the comment ( //* ) to swich to the other version
+    if(this.state.useClassVersion){
+      this.videoQueue = new VideoQueue(file, video)
+    } else {
+      videoStream(file, video)
+    }
+
+
     video.addEventListener('error', once(() => {
       console.log('got error', ...arguments)
       file.createReadStream().pipe(video)
@@ -65,15 +70,21 @@ class Broadcast extends React.Component {
     video.play()
     // debugger;
   }
+  switchVideoProcessor = (e) => {
+    console.log(e.target.checked)
+    this.setState({useClassVersion: e.target.checked})
+  }
   render() {
     const {seedHash, torrents} = this.state
     const torrentsAsArray = torrents.reduce((last, next) => {
       last.push(next.infoHash)
       return last
     }, [])
-    console.log(torrentsAsArray)
     return (
       <div className="broadcast">
+        <input type="checkbox"
+                onChange={this.switchVideoProcessor} checked={this.state.useClassVersion}/> Use class video stream
+        Checked: {this.state.useClassVersion + ''}
         {seedHash ? <h1>Seeding </h1> : null}
         <div className="dropzone">
           <FileDrop className="file-drop" onDrop={this.seedFile} >

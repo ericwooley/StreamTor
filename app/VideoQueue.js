@@ -156,6 +156,8 @@ export default class VideoQueue {
       }
 
       let arrayBuffer = data.toArrayBuffer() // TODO: avoid copy
+      console.group('Array Buffer Append')
+      console.log('Appending array buffer', arrayBuffer, 'byteLength', arrayBuffer.byteLength)
       arrayBuffer.fileStart = that.requestOffset
       that.requestOffset += arrayBuffer.byteLength
       let nextOffset
@@ -177,6 +179,9 @@ export default class VideoQueue {
         that.detachStream()
         return
       }
+
+      console.log('Next Offset', nextOffset)
+      console.groupEnd('Array Buffer Append')
       that.makeRequest(nextOffset)
     }
   }

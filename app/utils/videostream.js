@@ -133,6 +133,8 @@ module.exports = function (file, mediaElem, opts) {
 			}
 
 			var arrayBuffer = data.toArrayBuffer(); // TODO: avoid copy
+			console.group('Array Buffer Append')
+			console.log('Appending array buffer', arrayBuffer, 'byteLength', arrayBuffer.byteLength)
 			arrayBuffer.fileStart = requestOffset;
 			requestOffset += arrayBuffer.byteLength;
 			var nextOffset;
@@ -154,6 +156,8 @@ module.exports = function (file, mediaElem, opts) {
 				detachStream();
 				return;
 			}
+			console.log('Next Offset', nextOffset)
+			console.groupEnd('Array Buffer Append')
 			makeRequest(nextOffset);
 		}
 		stream.on('data', onData);
