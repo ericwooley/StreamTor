@@ -6,7 +6,7 @@ import client from '../../singletons/WebTorrent'
 import once from 'once'
 import SpeedStats from '../SpeedStats/SpeedStats'
 import VideoQueue from '../../VideoQueue'
-import videoStream from '../../utils/videoStream'
+import VideoStream from '../../utils/videoStream'
 import {MP4Box} from 'mp4box'
 const mp4box = new MP4Box()
 mp4box.onReady = (media) => console.log('media ready', media)
@@ -59,12 +59,13 @@ class Broadcast extends React.Component {
     if(this.state.useClassVersion){
       this.videoQueue = new VideoQueue(file, video)
     } else {
-      videoStream(file, video)
+      this.videoQueue = new VideoStream(file, video)
     }
 
 
-    video.addEventListener('error', once(() => {
-      console.log('got error', ...arguments)
+    video.addEventListener('error', once((e) => {
+      debugger
+      console.log('got error', e)
       file.createReadStream().pipe(video)
     }))
     video.play()

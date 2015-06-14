@@ -15,21 +15,33 @@ import {MP4Box} from 'mp4box'
  * @param {number=} opts.debugTrack Track to save for debugging. Defaults to -1 (none)
  */
 export default class VideoQueue {
+  // TODO: figure out what these are is
   HIGH_WATER_MARK = 10000000 // 1MB
   LOW_WATER_MARK = 1000000 // 100kB
   APPEND_RETRY_TIME = 5 // seconds
-  opts
   debugTrack// = opts.debugTrack || -1;
+
+  // The options passed in by constructor, seems to be unused
+  opts
+  // not sure what debug buffers are.
   debugBuffers = []
+  // The media source that the src of the mediaElement is set too
   mediaSource = new MediaSource()
-  mediaElem
-  ready = false
-  mp4box
+  // Start with zero waiting bytes
   totalWaitingBytes = 0
-  tracks = {} // keyed by track id
-  requestOffset // Position in the file where `stream` will next provide data
-  stream = null
-  detachStream = null
+  // Keeps track if the stream is ready for more buffers?
+  ready = false
+  // keyed by track id
+  tracks = {}
+  // The passed in media element we are going to set the source of
+  mediaElem
+  // mp4boxjs instance https://github.com/gpac/mp4box.js
+  mp4box
+  // Position in the file where `stream` will next provide data
+  requestOffset
+  // A readstream from the file
+  stream
+  // The file passed in from the constructor
   file
   constructor(file, mediaElem, opts = {}){
     this.file = file
@@ -53,11 +65,14 @@ export default class VideoQueue {
       this.mediaSource.endOfStream('decode')
     }
   }
+  // TODO: Not sure why this.ready needs to be true
   seekToElementTime = () => {
     if (this.ready) {
       this.seek(this.mediaElem.currentTime)
     }
   }
+
+  // Should happen when mp4Box has enough info from the buffers to get the metadata
   mp4BoxGotInfo = (info) => {
     console.log('MP4 info:', info)
     info.tracks.forEach(function (track) {
@@ -86,7 +101,7 @@ export default class VideoQueue {
         this.tracks[track.id] = trackEntry
       }
     })
-
+    // I have no idea
     let initSegs = this.mp4box.initializeSegmentation()
     initSegs.forEach(function (initSegment) {
       this.appendBuffer(this.tracks[initSegment.id], initSegment.buffer)
@@ -97,6 +112,7 @@ export default class VideoQueue {
     })
     this.ready = true
   }
+  // todo: append the track from this segment to the buffer, by track id?
   handleSegment = (id, user, buffer, nextSample) => {
     let track = this.tracks[id]
     this.appendBuffer(track, buffer, nextSample === track.meta.nb_samples)
@@ -109,7 +125,6 @@ export default class VideoQueue {
     }
   }
   makeRequest = (pos) => {
-    console.log('mediaSource ready')
     if (pos === this.file.length) {
       this.mp4box.flush() // All done!
       return
@@ -156,6 +171,7 @@ export default class VideoQueue {
       }
 
       let arrayBuffer = data.toArrayBuffer() // TODO: avoid copy
+      // sample output here http://pastebin.com/4Q7RgYEx
       console.group('Array Buffer Append')
       console.log('Appending array buffer', arrayBuffer, 'byteLength', arrayBuffer.byteLength)
       arrayBuffer.fileStart = that.requestOffset
