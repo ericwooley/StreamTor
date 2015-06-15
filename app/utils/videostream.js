@@ -23,7 +23,7 @@ class VideStream {
 		this.debugBuffers = [];
 		this.mediaElem = mediaElem
 		this.mediaElem.addEventListener('waiting',  () => {
-			if (ready) {
+			if (this.ready) {
 				seek(this.mediaElem.currentTime);
 			}
 		});
@@ -44,9 +44,9 @@ class VideStream {
 				this.mediaSource.endOfStream('decode');
 			}
 		};
-		var ready = false;
-		var totalWaitingBytes = 0;
-		var tracks = {}; // keyed by track id
+		this.ready = false;
+		this.totalWaitingBytes = 0;
+		this.tracks = {}; // keyed by track id
 		this.mp4box.onReady =  (info) => {
 			console.log('MP4 info:', info);
 			info.tracks.forEach((track) => {
@@ -72,23 +72,23 @@ class VideStream {
 						// It really isn't that inefficient to give the data to the browser on every frame (for video)
 						nbSamples: track.video ? 1 : 100
 					});
-					tracks[track.id] = trackEntry
+					this.tracks[track.id] = trackEntry
 				}
 			});
 
 			var initSegs = this.mp4box.initializeSegmentation();
 			initSegs.forEach((initSegment) => {
-				appendBuffer(tracks[initSegment.id], initSegment.buffer);
+				appendBuffer(this.tracks[initSegment.id], initSegment.buffer);
 				if (initSegment.id === this.debugTrack) {
 					save('init-track-' + this.debugTrack + '.mp4', [initSegment.buffer]);
 					this.debugBuffers.push(initSegment.buffer);
 				}
 			});
-			ready = true;
+			this.ready = true;
 		};
 
 		this.mp4box.onSegment = (id, user, buffer, nextSample) => {
-			var track = tracks[id];
+			var track = this.tracks[id];
 			appendBuffer(track, buffer, nextSample === track.meta.nb_samples);
 			if (id === this.debugTrack && this.debugBuffers) {
 				this.debugBuffers.push(buffer);
@@ -109,7 +109,7 @@ class VideStream {
 			}
 
 			if (stream && pos === requestOffset) {
-				return; // There is already a stream at the right position, so just let it continue
+				return; // There is althis.ready a stream at the right position, so just let it continue
 			}
 
 			if (stream) {
@@ -131,7 +131,7 @@ class VideStream {
 				stream.pause();
 				// Only resume if there isn't too much data that this.mp4box has processed that hasn't
 				// gone to the browser
-				if (totalWaitingBytes <= HIGH_WATER_MARK) {
+				if (this.totalWaitingBytes <= HIGH_WATER_MARK) {
 					resumeStream();
 				}
 
@@ -142,7 +142,7 @@ class VideStream {
 				arrayBuffer.fileStart = requestOffset;
 				requestOffset += arrayBuffer.byteLength;
 				var nextOffset;
-				try {
+				// try {
 					// MP4Box tends to blow up ungracefully when it can't parse the mp4 input, so
 					// use a try/catch
 					nextOffset = this.mp4box.appendBuffer(arrayBuffer);
@@ -150,16 +150,16 @@ class VideStream {
 					// if (nextOffset === arrayBuffer.fileStart) {
 					// 	throw new Error('MP4Box parsing stuck at offset: ' + nextOffset);
 					// }
-				} catch (err) {
-					console.error('MP4Box threw exception:', err);
-					// This will fire the 'error' event on the audio/video element
-					if (this.mediaSource.readyState === 'open') {
-						this.mediaSource.endOfStream('decode');
-					}
-					stream.destroy();
-					detachStream();
-					return;
-				}
+				// } catch (err) {
+				// 	console.error('MP4Box threw exception:', err);
+				// 	// This will fire the 'error' event on the audio/video element
+				// 	if (this.mediaSource.readyState === 'open') {
+				// 		this.mediaSource.endOfStream('decode');
+				// 	}
+				// 	stream.destroy();
+				// 	detachStream();
+				// 	throw err
+				// }
 				console.log('Next Offset', nextOffset)
 				console.groupEnd('Array Buffer Append')
 				makeRequest(nextOffset);
@@ -196,7 +196,7 @@ class VideStream {
 		}
 
 		var appendBuffer = (track, buffer, ended) => {
-			totalWaitingBytes += buffer.byteLength;
+			this.totalWaitingBytes += buffer.byteLength;
 			track.arrayBuffers.push({
 				buffer: buffer,
 				ended: ended || false
@@ -221,8 +221,8 @@ class VideStream {
 				}, APPEND_RETRY_TIME);
 			}
 			if (appended) {
-				totalWaitingBytes -= buffer.buffer.byteLength;
-				if (totalWaitingBytes <= LOW_WATER_MARK) {
+				this.totalWaitingBytes -= buffer.buffer.byteLength;
+				if (this.totalWaitingBytes <= LOW_WATER_MARK) {
 					resumeStream();
 				}
 				updateEnded(); // call this.mediaSource.endOfStream() if needed
@@ -246,8 +246,8 @@ class VideStream {
 				return;
 			}
 
-			var ended = Object.keys(tracks).every(function (id) {
-				var track = tracks[id];
+			var ended = Object.keys(this.tracks).every((id) => {
+				var track = this.tracks[id];
 				return track.ended && !track.buffer.updating;
 			});
 
