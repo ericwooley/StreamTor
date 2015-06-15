@@ -71,76 +71,76 @@ class VideStream {
     }
 
     this.requestOffset = pos;
-    var opts = {
+    var streamOptions = {
       start: this.requestOffset,
       end: this.file.length - 1
     };
     // There is necessarily only one stream that is not detached/destroyed at one time,
     // so it's safe to overwrite the var from the outer scope
-    // stream = file.createReadStream(opts);
-    this.stream = this.file.createReadStream(opts);
-    var onData = (data) => {
-      // Pause the stream and resume it on the next run of the event loop to avoid
-      // lots of 'data' event blocking the UI
-      this.stream.pause();
-      // Only resume if there isn't too much data that this.mp4box has processed that hasn't
-      // gone to the browser
-      if (this.totalWaitingBytes <= HIGH_WATER_MARK) {
-        this.resumeStream();
-      }
-
-      var arrayBuffer = data.toArrayBuffer(); // TODO: avoid copy
-      // sample output here http://pastebin.com/dyC9ME3P
-      console.group('Array Buffer Append')
-      console.log('Appending array buffer', arrayBuffer, 'byteLength', arrayBuffer.byteLength)
-      arrayBuffer.fileStart = this.requestOffset;
-      this.requestOffset += arrayBuffer.byteLength;
-      var nextOffset;
-      // try {
-      // MP4Box tends to blow up ungracefully when it can't parse the mp4 input, so
-      // use a try/catch
-      nextOffset = this.mp4box.appendBuffer(arrayBuffer);
-      // // Prevent infinte loops if this.mp4box keeps requesting the same data
-      // if (nextOffset === arrayBuffer.fileStart) {
-      //  throw new Error('MP4Box parsing stuck at offset: ' + nextOffset);
-      // }
-      // } catch (err) {
-      //  console.error('MP4Box threw exception:', err);
-      //  // This will fire the 'error' event on the audio/video element
-      //  if (this.mediaSource.readyState === 'open') {
-      //      this.mediaSource.endOfStream('decode');
-      //  }
-      //  stream.destroy();
-      //  this.detachStream();
-      //  throw err
-      // }
-      console.log('Next Offset', nextOffset)
-      console.groupEnd('Array Buffer Append')
-      this.makeRequest(nextOffset);
-    }
-    this.stream.on('data', onData);
-    var onEnd = () => {
-      this.detachStream();
-      this.makeRequest(this.requestOffset);
-    }
-    this.stream.on('end', onEnd);
-    var onStreamError = (err) => {
-      console.error('Stream error:', err);
-      if (this.mediaSource.readyState === 'open') {
-        this.mediaSource.endOfStream('network');
-      }
-    }
-    this.stream.on('error', onStreamError);
-
+    // stream = file.createReadStream(streamOptions);
+    this.stream = this.file.createReadStream(streamOptions);
+    this.stream.on('data', this.onData);
+    this.stream.on('end', this.onEnd);
+    this.stream.on('error', this.onStreamError);
+    // This needs to be reassigned, every time. Not sure the logic behind it.
     this.detachStream = () => {
-      this.stream.removeListener('data', onData);
-      this.stream.removeListener('end', onEnd);
-      this.stream.removeListener('error', onStreamError);
+      this.stream.removeListener('data', this.onData);
+      this.stream.removeListener('end', this.onEnd);
+      this.stream.removeListener('error', this.onStreamError);
       // stream = null
       this.stream = null
       this.detachStream = null;
     }
   }
+  onStreamError = (err) => {
+    console.error('Stream error:', err);
+    if (this.mediaSource.readyState === 'open') {
+      this.mediaSource.endOfStream('network');
+    }
+  }
+  onEnd = () => {
+    this.detachStream();
+    this.makeRequest(this.requestOffset);
+  }
+  onData = (data) => {
+          // Pause the stream and resume it on the next run of the event loop to avoid
+          // lots of 'data' event blocking the UI
+          this.stream.pause();
+          // Only resume if there isn't too much data that this.mp4box has processed that hasn't
+          // gone to the browser
+          if (this.totalWaitingBytes <= HIGH_WATER_MARK) {
+          this.resumeStream();
+          }
+
+          var arrayBuffer = data.toArrayBuffer(); // TODO: avoid copy
+          // sample output here http://pastebin.com/dyC9ME3P
+          console.group('Array Buffer Append')
+          console.log('Appending array buffer', arrayBuffer, 'byteLength', arrayBuffer.byteLength)
+          arrayBuffer.fileStart = this.requestOffset;
+          this.requestOffset += arrayBuffer.byteLength;
+          var nextOffset;
+          try {
+          // MP4Box tends to blow up ungracefully when it can't parse the mp4 input, so
+          // use a try/catch
+              nextOffset = this.mp4box.appendBuffer(arrayBuffer);
+          // // Prevent infinte loops if this.mp4box keeps requesting the same data
+          // if (nextOffset === arrayBuffer.fileStart) {
+          //  throw new Error('MP4Box parsing stuck at offset: ' + nextOffset);
+          // }
+          } catch (err) {
+              console.error('MP4Box threw exception:', err);
+              // This will fire the 'error' event on the audio/video element
+              if (this.mediaSource.readyState === 'open') {
+                  this.mediaSource.endOfStream('decode');
+              }
+              this.stream.destroy();
+              this.detachStream();
+              throw err
+          }
+          console.log('Next Offset', nextOffset)
+          console.groupEnd('Array Buffer Append')
+          this.makeRequest(nextOffset);
+      }
   handleSegment = (id, user, buffer, nextSample) => {
     var track = this.tracks[id];
     this.appendBuffer(track, buffer, nextSample === track.meta.nb_samples);
