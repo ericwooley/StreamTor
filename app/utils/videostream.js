@@ -34,8 +34,8 @@ class VideStream {
 		});
 		this.mediaElem.src = window.URL.createObjectURL(this.mediaSource);
 
-		var mp4box = new MP4Box();
-		mp4box.onError =  (e) => {
+		this.mp4box = new MP4Box();
+		this.mp4box.onError =  (e) => {
 			console.error('MP4Box error:', e);
 			if(detachStream) {
 				detachStream();
@@ -47,7 +47,7 @@ class VideStream {
 		var ready = false;
 		var totalWaitingBytes = 0;
 		var tracks = {}; // keyed by track id
-		mp4box.onReady =  (info) => {
+		this.mp4box.onReady =  (info) => {
 			console.log('MP4 info:', info);
 			info.tracks.forEach((track) => {
 				var mime;
@@ -68,7 +68,7 @@ class VideStream {
 						ended: false
 					};
 					sourceBuffer.addEventListener('updateend', popBuffers.bind(null, trackEntry));
-					mp4box.setSegmentOptions(track.id, null, {
+					this.mp4box.setSegmentOptions(track.id, null, {
 						// It really isn't that inefficient to give the data to the browser on every frame (for video)
 						nbSamples: track.video ? 1 : 100
 					});
@@ -76,7 +76,7 @@ class VideStream {
 				}
 			});
 
-			var initSegs = mp4box.initializeSegmentation();
+			var initSegs = this.mp4box.initializeSegmentation();
 			initSegs.forEach((initSegment) => {
 				appendBuffer(tracks[initSegment.id], initSegment.buffer);
 				if (initSegment.id === this.debugTrack) {
@@ -87,7 +87,7 @@ class VideStream {
 			ready = true;
 		};
 
-		mp4box.onSegment = (id, user, buffer, nextSample) => {
+		this.mp4box.onSegment = (id, user, buffer, nextSample) => {
 			var track = tracks[id];
 			appendBuffer(track, buffer, nextSample === track.meta.nb_samples);
 			if (id === this.debugTrack && this.debugBuffers) {
@@ -104,7 +104,7 @@ class VideStream {
 		var detachStream = null;
 		var makeRequest = (pos)  => {
 			if (pos === file.length) {
-				mp4box.flush(); // All done!
+				this.mp4box.flush(); // All done!
 				return;
 			}
 
@@ -129,7 +129,7 @@ class VideStream {
 				// Pause the stream and resume it on the next run of the event loop to avoid
 				// lots of 'data' event blocking the UI
 				stream.pause();
-				// Only resume if there isn't too much data that mp4box has processed that hasn't
+				// Only resume if there isn't too much data that this.mp4box has processed that hasn't
 				// gone to the browser
 				if (totalWaitingBytes <= HIGH_WATER_MARK) {
 					resumeStream();
@@ -145,8 +145,8 @@ class VideStream {
 				try {
 					// MP4Box tends to blow up ungracefully when it can't parse the mp4 input, so
 					// use a try/catch
-					nextOffset = mp4box.appendBuffer(arrayBuffer);
-					// // Prevent infinte loops if mp4box keeps requesting the same data
+					nextOffset = this.mp4box.appendBuffer(arrayBuffer);
+					// // Prevent infinte loops if this.mp4box keeps requesting the same data
 					// if (nextOffset === arrayBuffer.fileStart) {
 					// 	throw new Error('MP4Box parsing stuck at offset: ' + nextOffset);
 					// }
@@ -188,7 +188,7 @@ class VideStream {
 		}
 
 		var seek = (seconds) => {
-			var seekResult = mp4box.seek(seconds, true);
+			var seekResult = this.mp4box.seek(seconds, true);
 			console.log('Seeking to time: ', seconds);
 			console.log('Seeked file offset:', seekResult.offset);
 			makeRequest(seekResult.offset);
