@@ -28,11 +28,11 @@ class VideStream {
 			}
 		});
 
-		var mediaSource = new MediaSource();
-		mediaSource.addEventListener('sourceopen',  () =>  {
+		this.mediaSource = new MediaSource();
+		this.mediaSource.addEventListener('sourceopen',  () =>  {
 			makeRequest(0);
 		});
-		this.mediaElem.src = window.URL.createObjectURL(mediaSource);
+		this.mediaElem.src = window.URL.createObjectURL(this.mediaSource);
 
 		var mp4box = new MP4Box();
 		mp4box.onError =  (e) => {
@@ -40,8 +40,8 @@ class VideStream {
 			if(detachStream) {
 				detachStream();
 			}
-			if (mediaSource.readyState === 'open') {
-				mediaSource.endOfStream('decode');
+			if (this.mediaSource.readyState === 'open') {
+				this.mediaSource.endOfStream('decode');
 			}
 		};
 		var ready = false;
@@ -60,7 +60,7 @@ class VideStream {
 				}
 				mime += '; codecs="' + track.codec + '"';
 				if (MediaSource.isTypeSupported(mime)) {
-					var sourceBuffer = mediaSource.addSourceBuffer(mime);
+					var sourceBuffer = this.mediaSource.addSourceBuffer(mime);
 					var trackEntry = {
 						buffer: sourceBuffer,
 						arrayBuffers: [],
@@ -153,8 +153,8 @@ class VideStream {
 				} catch (err) {
 					console.error('MP4Box threw exception:', err);
 					// This will fire the 'error' event on the audio/video element
-					if (mediaSource.readyState === 'open') {
-						mediaSource.endOfStream('decode');
+					if (this.mediaSource.readyState === 'open') {
+						this.mediaSource.endOfStream('decode');
 					}
 					stream.destroy();
 					detachStream();
@@ -172,8 +172,8 @@ class VideStream {
 			stream.on('end', onEnd);
 			var onStreamError  = (err) => {
 				console.error('Stream error:', err);
-				if (mediaSource.readyState === 'open') {
-					mediaSource.endOfStream('network');
+				if (this.mediaSource.readyState === 'open') {
+					this.mediaSource.endOfStream('network');
 				}
 			}
 			stream.on('error', onStreamError);
@@ -187,7 +187,7 @@ class VideStream {
 			}
 		}
 
-		function seek (seconds) {
+		var seek = (seconds) => {
 			var seekResult = mp4box.seek(seconds, true);
 			console.log('Seeking to time: ', seconds);
 			console.log('Seeked file offset:', seekResult.offset);
@@ -195,7 +195,7 @@ class VideStream {
 			resumeStream();
 		}
 
-		function appendBuffer (track, buffer, ended) {
+		var appendBuffer = (track, buffer, ended) => {
 			totalWaitingBytes += buffer.byteLength;
 			track.arrayBuffers.push({
 				buffer: buffer,
@@ -204,7 +204,7 @@ class VideStream {
 			popBuffers(track);
 		}
 
-		function popBuffers (track) {
+		var popBuffers = (track) => {
 			if (track.buffer.updating || track.arrayBuffers.length === 0) return;
 			var buffer = track.arrayBuffers.shift();
 			var appended = false;
@@ -225,11 +225,11 @@ class VideStream {
 				if (totalWaitingBytes <= LOW_WATER_MARK) {
 					resumeStream();
 				}
-				updateEnded(); // call mediaSource.endOfStream() if needed
+				updateEnded(); // call this.mediaSource.endOfStream() if needed
 			}
 		}
 
-		function resumeStream () {
+		var resumeStream = () =>  {
 			// Always wait till the next run of the event loop to cause async break
 			setTimeout(function () {
 				if (stream) {
@@ -241,8 +241,8 @@ class VideStream {
 			});
 		}
 
-		function updateEnded () {
-			if (mediaSource.readyState !== 'open') {
+		var updateEnded = () => {
+			if (this.mediaSource.readyState !== 'open') {
 				return;
 			}
 
@@ -251,8 +251,8 @@ class VideStream {
 				return track.ended && !track.buffer.updating;
 			});
 
-			if (ended && mediaSource.readyState === 'open') {
-				mediaSource.endOfStream();
+			if (ended && this.mediaSource.readyState === 'open') {
+				this.mediaSource.endOfStream();
 			}
 		}
 	}
