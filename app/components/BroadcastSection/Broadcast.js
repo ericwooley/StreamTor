@@ -6,7 +6,6 @@ import client from '../../singletons/WebTorrent'
 import once from 'once'
 import SpeedStats from '../SpeedStats/SpeedStats'
 import VideoQueue from '../../VideoQueue'
-import VideoStream from '../../utils/videoStream'
 import {MP4Box} from 'mp4box'
 const mp4box = new MP4Box()
 mp4box.onReady = (media) => console.log('media ready', media)
@@ -54,22 +53,12 @@ class Broadcast extends React.Component {
   }
   playfile(file) {
     let video = React.findDOMNode(this.refs.video)
-
-    // Comment swich add a / to the begging of the comment ( //* ) to swich to the other version
-    if(this.state.useClassVersion){
-      this.videoQueue = new VideoQueue(file, video)
-    } else {
-      this.videoQueue = new VideoStream(file, video)
-    }
-
-
+    this.videoQueue = new VideoQueue(file, video)
     video.addEventListener('error', once((e) => {
-      debugger
       console.log('got error', e)
       file.createReadStream().pipe(video)
     }))
     video.play()
-    // debugger;
   }
   switchVideoProcessor = (e) => {
     console.log(e.target.checked)
@@ -83,9 +72,6 @@ class Broadcast extends React.Component {
     }, [])
     return (
       <div className="broadcast">
-        <input type="checkbox"
-                onChange={this.switchVideoProcessor} checked={this.state.useClassVersion}/> Use class video stream
-        Checked: {this.state.useClassVersion + ''}
         {seedHash ? <h1>Seeding </h1> : null}
         <div className="dropzone">
           <FileDrop className="file-drop" onDrop={this.seedFile} >
@@ -109,21 +95,25 @@ const style = {
     border: '1px dashed red',
     position: 'relative',
     '.file-drop': {
-      position: 'absolute',
-      top: 0,
-      bottom: 0,
-      right: 0,
-      left: 0
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        right: 0,
+        left: 0
     },
     '.drop-title': {
-      margin: '0 auto',
-      display: 'inline-block',
-      textAlign: 'center',
-      color: '#900',
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%)'
+        margin: '0 auto',
+        display: 'inline-block',
+        textAlign: 'center',
+        color: '#900',
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%)'
+    },
+    'video': {
+        maxWidth: '100%',
+        maxHeight: '500px'
     }
   }
 }

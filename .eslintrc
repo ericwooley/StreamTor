@@ -22,7 +22,6 @@
     "no-underscore-dangle": true,
 
     // Code style
-    "indent": 4,
     "quotes": [2, "single"],
     "semi": [1, "never"],
     "no-debugger": 0,
