@@ -24,7 +24,9 @@ var APPEND_RETRY_TIME = 5 // seconds
         this.debugTrack = opts.debugTrack || -1
         this.debugBuffers = []
         this.mediaElem = mediaElem
+        this.combinedFileLength = file.length
         this.file = file
+        this.files = [file]
         this.mediaElem.addEventListener('waiting', () => {
             if (this.ready) {
                 this.seek(this.mediaElem.currentTime)
@@ -38,6 +40,7 @@ var APPEND_RETRY_TIME = 5 // seconds
         this.mp4box = new MP4Box()
         this.mp4box.onError = this.handleMp4BoxError
         this.ready = false
+        this.finishedFIleLength = 0
         this.totalWaitingBytes = 0
         this.tracks = {} // keyed by track id
         this.mp4box.onReady = this.setupVideo
@@ -46,6 +49,11 @@ var APPEND_RETRY_TIME = 5 // seconds
         this.stream = null
         // var stream
         this.detachStream = null
+    }
+    addFile(file){
+        console.log('file added')
+        this.files.push(file)
+        this.combinedFileLength += file.length
     }
     resumeStream = () => {
         // Always wait till the next run of the event loop to cause async break
@@ -59,13 +67,19 @@ var APPEND_RETRY_TIME = 5 // seconds
         })
     }
     makeRequest = (pos) => {
-        if (pos === this.file.length) {
+        if(!this.files.length) {
+            console.log('Finished adding files to the stream')
             this.mp4box.flush() // All done!
             return
         }
+        if (pos === this.combinedFileLength - this.finishedFIleLength) {
+            console.log('Adding next file to stream')
+            this.finishedFIleLength += this.file.length
+            this.file = this.files.shift()
+        }
 
         if (this.stream && pos === this.requestOffset) {
-            return// There is althis.ready a stream at the right position, so just let it continue
+            return // There is althis.ready a stream at the right position, so just let it continue
         }
 
         if (this.stream) {
@@ -78,6 +92,7 @@ var APPEND_RETRY_TIME = 5 // seconds
             start: this.requestOffset,
             end: this.file.length - 1
         }
+        console.log('Adding to stream', streamOptions)
             // There is necessarily only one stream that is not detached/destroyed at one time,
             // so it's safe to overwrite the var from the outer scope
             // stream = file.createReadStream(streamOptions)
@@ -117,8 +132,8 @@ var APPEND_RETRY_TIME = 5 // seconds
 
         var arrayBuffer = data.toArrayBuffer() // TODO: avoid copy
         // sample output here http://pastebin.com/dyC9ME3P
-        console.group('Array Buffer Append')
-        console.log('Appending array buffer', arrayBuffer, 'byteLength', arrayBuffer.byteLength)
+        // console.group('Array Buffer Append')
+        // console.log('Appending array buffer', arrayBuffer, 'byteLength', arrayBuffer.byteLength)
         arrayBuffer.fileStart = this.requestOffset
         this.requestOffset += arrayBuffer.byteLength
         var nextOffset
@@ -140,8 +155,8 @@ var APPEND_RETRY_TIME = 5 // seconds
             this.detachStream()
             throw err
         }
-        console.log('Next Offset', nextOffset)
-        console.groupEnd('Array Buffer Append')
+        // console.log('Next Offset', nextOffset)
+        // console.groupEnd('Array Buffer Append')
         this.makeRequest(nextOffset)
     }
     handleSegment = (id, user, buffer, nextSample) => {
@@ -248,16 +263,16 @@ var APPEND_RETRY_TIME = 5 // seconds
             }
         })
 
-var initSegs = this.mp4box.initializeSegmentation()
-initSegs.forEach((initSegment) => {
-    this.appendBuffer(this.tracks[initSegment.id], initSegment.buffer)
-    if (initSegment.id === this.debugTrack) {
-        save('init-track-' + this.debugTrack + '.mp4', [initSegment.buffer])
-        this.debugBuffers.push(initSegment.buffer)
+        var initSegs = this.mp4box.initializeSegmentation()
+        initSegs.forEach((initSegment) => {
+            this.appendBuffer(this.tracks[initSegment.id], initSegment.buffer)
+            if (initSegment.id === this.debugTrack) {
+                save('init-track-' + this.debugTrack + '.mp4', [initSegment.buffer])
+                this.debugBuffers.push(initSegment.buffer)
+            }
+        })
+        this.ready = true
     }
-})
-this.ready = true
-}
 }
 
 

@@ -36,11 +36,10 @@ class Broadcast extends React.Component {
       // Web torrent throws some memeory error if you add a bunch at once
       setTimeout(() => {
         client.seed(file, (torrent) => {
-          if(!this.activeTorrent) {
-            this.activeTorrent = torrent
+          // if(!this.activeTorrent) {
+            // this.activeTorrent = torrent
             this.playfile(torrent.files[0])
-          }
-
+          // }
           this.state.torrents.push(torrent)
           this.setState({
             torrents: this.state.torrents
@@ -48,17 +47,20 @@ class Broadcast extends React.Component {
         })
       }, 100 * i)
     })
-    // play the first file
 
   }
   playfile(file) {
-    let video = React.findDOMNode(this.refs.video)
-    this.videoQueue = new VideoQueue(file, video)
-    video.addEventListener('error', once((e) => {
-      console.log('got error', e)
-      file.createReadStream().pipe(video)
-    }))
-    video.play()
+    if(!this.videoQueue) {
+        let video = React.findDOMNode(this.refs.video)
+        this.videoQueue = new VideoQueue(file, video)
+        video.addEventListener('error', once((e) => {
+          console.log('got error', e)
+          file.createReadStream().pipe(video)
+        }))
+        video.play()
+    } else {
+        this.videoQueue.addFile(file)
+    }
   }
   switchVideoProcessor = (e) => {
     console.log(e.target.checked)
@@ -110,11 +112,11 @@ const style = {
         top: '50%',
         left: '50%',
         transform: 'translate(-50%)'
-    },
-    'video': {
-        maxWidth: '100%',
-        maxHeight: '500px'
     }
+  },
+  'video': {
+      maxWidth: '100%',
+      maxHeight: '500px'
   }
 }
 ReactInStyle.add(style, '.broadcast')
