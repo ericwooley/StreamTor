@@ -5,7 +5,6 @@ import {getStats} from '../../singletons/WebTorrent'
 
 class SpeedStats extends React.Component {
   componentDidMount() {
-    console.log(this.props)
     if(this.props.torrent) {
       this.startCollectingStats()
     }
@@ -14,7 +13,6 @@ class SpeedStats extends React.Component {
     clearInterval(this.interval)
   }
   componentWillReceiveProps(nextProps){
-    console.log()
     if(this.interval !== undefined) {
       clearInterval(this.interval)
     }
@@ -23,7 +21,6 @@ class SpeedStats extends React.Component {
     }
   }
   startCollectingStats(torrent) {
-    console.log('collecting info')
     this.interval = setInterval(() => this.refreshStats(torrent), 16)
   }
   refreshStats(torrent) {

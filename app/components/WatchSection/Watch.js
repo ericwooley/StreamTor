@@ -5,7 +5,7 @@ import client from '../../singletons/WebTorrent'
 import videostream from 'videostream'
 import once from 'once'
 import SpeedStats from '../SpeedStats/SpeedStats'
-import StreamHandler from '../../utils/StreamHandler'
+// import StreamHandler from '../../utils/StreamHandler'
 
 
 class Watch extends React.Component {

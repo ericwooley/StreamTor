@@ -3,12 +3,8 @@ import connectToStores from 'alt/utils/connectToStores'
 import ReactInStyle from 'react-in-style'
 import FileDrop from '../FileDrop/FileDrop'
 import client from '../../singletons/WebTorrent'
-import once from 'once'
 import SpeedStats from '../SpeedStats/SpeedStats'
-import VideoQueue from '../../VideoQueue'
-import {MP4Box} from 'mp4box'
-const mp4box = new MP4Box()
-mp4box.onReady = (media) => console.log('media ready', media)
+import VideoQueue from '../../videoQueue'
 class Broadcast extends React.Component {
   constructor() {
     super()
@@ -38,7 +34,13 @@ class Broadcast extends React.Component {
         client.seed(file, (torrent) => {
           // if(!this.activeTorrent) {
             // this.activeTorrent = torrent
-            this.playfile(torrent.files[0])
+            // const torrentFile = torrent.files[0]
+            // if (torrentFile.done) {
+                // console.log('this happens twice')
+                this.playfile(torrent.files[0])
+            // } else {
+                // torrentFile.on('done', () => this.playfile(torrentFile))
+            // }
           // }
           this.state.torrents.push(torrent)
           this.setState({
@@ -51,13 +53,7 @@ class Broadcast extends React.Component {
   }
   playfile(file) {
     if(!this.videoQueue) {
-        let video = React.findDOMNode(this.refs.video)
-        this.videoQueue = new VideoQueue(file, video)
-        video.addEventListener('error', once((e) => {
-          console.log('got error', e)
-          file.createReadStream().pipe(video)
-        }))
-        video.play()
+        this.videoQueue = new VideoQueue(file)
     } else {
         this.videoQueue.addFile(file)
     }
@@ -83,7 +79,6 @@ class Broadcast extends React.Component {
         <a href={'/view/' + encodeURI(JSON.stringify(torrentsAsArray))} target="_blank" >Open Stream</a>
         <br />
         {torrents.map((torrent) => <SpeedStats key={torrent.infoHash} torrent={torrent} />)}
-        <video ref="video" controls />
      </div>
     )
   }
@@ -119,5 +114,5 @@ const style = {
       maxHeight: '500px'
   }
 }
-ReactInStyle.add(style, '.broadcast')
+ReactInStyle.add(style, 'body')
 export default connectToStores(Broadcast)

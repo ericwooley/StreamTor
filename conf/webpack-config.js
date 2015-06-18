@@ -1,7 +1,6 @@
 // MAIN DEPENDENCIES
 import path from 'path';
 import webpack from 'webpack';
-// require("font-awesome-webpack");
 import _ from 'lodash';
 
 // base app dir
